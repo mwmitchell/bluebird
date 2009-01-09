@@ -7,21 +7,21 @@ An XSL-like DSL for transforming XML, using Ruby
 
 
 ==Example
-bb = Bluebird.xml(XML)
+  bb = Bluebird.xml(XML)
 
-bb.match '/' do |n|
-  build do
-    div bb.call_template('//PLANT')
-  end
-end
-
-bb.match '//PLANT' do |n|
-  build do
-    div do
-      dt 'price'
-      dd n.at('PRICE').inner_text
-      dt 'name'
-      dd n.at('COMMON').inner_text
+  bb.match '/' do |n|
+    build do
+      div bb.call_template('//PLANT')
     end
   end
-end
+  
+  bb.match '//PLANT' do |n|
+    build do
+      div do
+        dt 'price'
+        dd n.at('PRICE').inner_text
+        dt 'name'
+        dd n.at('COMMON').inner_text
+      end
+    end
+  end
