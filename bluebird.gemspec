@@ -17,6 +17,6 @@ Gem::Specification.new do |s|
 
   ]
   #s.rdoc_options = ["--main", "README.rdoc"]
-  s.extra_rdoc_files = %w(LICENSE README.rdoc)
+  s.extra_rdoc_files = %w(LICENSE README.rdoc example.rb)
   s.add_dependency("hpricot")
 end
