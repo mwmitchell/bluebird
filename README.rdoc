@@ -25,3 +25,5 @@ An XSL-like DSL for transforming XML, using Ruby
       end
     end
   end
+  
+  bb.transform
