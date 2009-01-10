@@ -46,7 +46,7 @@ module Bluebird
     def call_template(pattern)
       matches = @doc.search(pattern)
       tpl_matches=[]
-      tpl = @templates.detect do |t|
+      tpl = @templates[1..-1].detect do |t|
         tpl_matches = @doc.search(t[:pattern])
         tpl_matches.any?{|n| matches.include?(n) }
       end

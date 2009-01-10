@@ -19,20 +19,22 @@ XML = %(<CATALOG>
 
 EXPECTED = %(
 <div>
-  <div>
+  <div zone="4">
     <dt>price</dt>
     <dd>$2.44</dd>
     <dt>name</dt>
     <dd>Bloodroot</dd>
   </div>
-  <div>
+  <div zone="3">
     <dt>price</dt>
     <dd>$9.37</dd>
     <dt>name</dt>
     <dd>Columbine</dd>
   </div>
 </div>
-).gsub(/\n|\t/, '').gsub(/ +/, '').to_s # remove the spaces, tabs and line breaks
+).gsub(/\n|\t/, '').gsub(/ +/, ' ').gsub(/> /, '>').to_s # remove the spaces, tabs and line breaks
+
+require './lib/bluebird'
 
 bb = Bluebird.xml(XML)
 
@@ -44,7 +46,7 @@ end
 
 bb.match '//PLANT' do |n|
   build do
-    div do
+    div({:zone=>n.at('ZONE').inner_text}) do
       dt 'price'
       dd n.at('PRICE').inner_text
       dt 'name'
@@ -53,4 +55,6 @@ bb.match '//PLANT' do |n|
   end
 end
 
-EXPECTED == bb.transform.to_s == true
+result = bb.transform.to_s
+puts EXPECTED == result
+puts result
