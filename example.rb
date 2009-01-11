@@ -17,44 +17,29 @@ XML = %(<CATALOG>
 	</PLANT>
 </CATALOG>)
 
-EXPECTED = %(
-<div>
-  <div zone="4">
-    <dt>price</dt>
-    <dd>$2.44</dd>
-    <dt>name</dt>
-    <dd>Bloodroot</dd>
-  </div>
-  <div zone="3">
-    <dt>price</dt>
-    <dd>$9.37</dd>
-    <dt>name</dt>
-    <dd>Columbine</dd>
-  </div>
-</div>
-).gsub(/\n|\t/, '').gsub(/ +/, ' ').gsub(/> /, '>').to_s # remove the spaces, tabs and line breaks
+EXPECTED = %(<?xml version="1.0"?>
+<div zone="4"><dt>price</dt><dd>$2.44</dd><dt>name</dt><dd>Bloodroot</dd></div>
+<div zone="3"><dt>price</dt><dd>$9.37</dd><dt>name</dt><dd>Columbine</dd></div>
+<div/>
+)
 
 require './lib/bluebird'
 
 bb = Bluebird.xml(XML)
 
-bb.match '/' do |n|
-  build do
-    div bb.call_template('//PLANT')
+bb.root do |n|
+  div bb.call_template(:plant)
+end
+
+bb.template :plant=>'//PLANT' do |n|
+  div({:zone=>n.at('ZONE').inner_text}) do
+    dt 'price'
+    dd n.at('PRICE').inner_text
+    dt 'name'
+    dd n.at('COMMON').inner_text
   end
 end
 
-bb.match '//PLANT' do |n|
-  build do
-    div({:zone=>n.at('ZONE').inner_text}) do
-      dt 'price'
-      dd n.at('PRICE').inner_text
-      dt 'name'
-      dd n.at('COMMON').inner_text
-    end
-  end
-end
-
-result = bb.transform.to_s
+result = bb.transform.to_xml
 puts EXPECTED == result
 puts result

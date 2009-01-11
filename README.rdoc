@@ -8,23 +8,23 @@ An XSL-like DSL for transforming XML, using Ruby
   sudo gem install mwmitchell-bluebird
 
 ==Example
-  bb = Bluebird.xml(XML)
+  bb = Bluebird.xml(some_xml)
 
-  bb.match '/' do |n|
-    build do
-      div bb.call_template('//PLANT')
-    end
-  end
-  
-  bb.match '//PLANT' do |n|
-    build do
-      div do
-        dt 'price'
-        dd n.at('PRICE').inner_text
-        dt 'name'
-        dd n.at('COMMON').inner_text
+  bb.root do |n|
+    html do
+      body do
+        div call_template(:plant)
       end
     end
   end
   
-  bb.transform
+  bb.template :plant=>'//PLANT' do |n|
+    div do
+      dt 'price'
+      dd n.at('PRICE').inner_text
+      dt 'name'
+      dd n.at('COMMON').inner_text
+    end
+  end
+  
+  new_xml = bb.transform.to_xml

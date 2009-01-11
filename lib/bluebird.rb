@@ -2,59 +2,83 @@ proc {|base, files|
   $: << base unless $:.include?(base) || $:.include?(File.expand_path(base))
   files.each {|f| require f}
 }.call(File.dirname(__FILE__), ['core_ext'])
-
+ 
 require 'rubygems'
-require 'hpricot'
+require 'nokogiri'
 
 module Bluebird
   
-  def self.xml(xml)
-    DSL.new(Hpricot::XML(xml))
+  def self.xml(f)
+    DSL.new(Nokogiri::Slop(f))
   end
   
-  class DSL
+  Document = ::Nokogiri::XML::Document
+  
+  class InvalidTemplate < RuntimeError; end
+  
+  class DSL < Nokogiri::XML::Builder
     
-    attr_reader :doc, :templates
+    attr_reader :source, :templates, :root_template
     
-    def initialize(hpricot)
-      @doc = hpricot
-      @templates = []
+    def initialize(source_doc)
+      @source = source_doc
+      @templates=[]
+      super() do; end
     end
     
-    def build(*a, &b)
-      Hpricot.build(*a, &b)
+    def root_template?; ! @root_template.nil?; end
+    
+    # template '//PLANT'
+    # template :plants=>'//PLANT'
+    def template(pattern, opts={}, &blk)
+      id, pattern = pattern.is_a?(Hash) ? [pattern.keys.first.to_sym, pattern.values.first] : [nil,pattern]
+      @templates << {:id=>id, :pattern=>pattern, :opts=>opts, :block=>blk}
     end
     
-    def match(pattern, &block)
-      @templates << {:pattern=>pattern, :block=>block}
+    def root(opts={}, &blk)
+      @templates << @root_template = {:id=>:root, :pattern=>@source.root.css_path, :opts=>opts, :block=>blk}
     end
     
     def transform
-      tpl = @templates.first
-      new_doc=nil
-      @doc.search(tpl[:pattern]).each do |n|
-        result = instance_exec(n, &tpl[:block])
-        if new_doc.nil?
-          new_doc = Hpricot::XML(result.to_s)
-        else
-          new_doc << result
-        end
+      if root_template?
+        call_template :root
+      else
+        # execute all templates that don't have an id
+        apply_templates
       end
-      new_doc
+      self
     end
     
-    def call_template(pattern)
-      matches = @doc.search(pattern)
-      tpl_matches=[]
-      tpl = @templates[1..-1].detect do |t|
-        tpl_matches = @doc.search(t[:pattern])
-        tpl_matches.any?{|n| matches.include?(n) }
-      end
-      @doc.search(tpl[:pattern]).collect do |n|
+    def call_template(id)
+      tpl = @templates.detect{|t|t[:id]==id}
+      raise InvalidTemplate.new("Template :#{id} not found") if tpl.nil?
+      @source.search(tpl[:pattern]).each do |n|
         instance_exec n, &tpl[:block]
       end
     end
     
+    def apply_templates(pattern=nil)
+      if pattern
+        node_set = @source.search(pattern)
+        tpl_matches=[]
+        tpl = @templates.detect do |t|
+          tpl_matches = @source.search(t[:pattern])
+          tpl_matches.any?{|n| node_set.include?(n) }
+        end
+        if tpl
+          @source.search(tpl[:pattern]).each do |n|
+            instance_exec n, &tpl[:block]
+          end
+        end
+      else
+        @templates.select{|t|t[:id]==nil}.each do |tpl|
+          @source.search(tpl[:pattern]).each do |n|
+            instance_exec n, &tpl[:block]
+          end
+        end
+      end
+    end
+    
   end
-  
+   
 end
