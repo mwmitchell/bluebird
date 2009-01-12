@@ -1,0 +1,1 @@
+Some how keep track of the current node so when calling apply_templates, the xpath is within context
